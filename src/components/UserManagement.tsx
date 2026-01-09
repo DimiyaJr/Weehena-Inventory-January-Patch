@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Search, User, Shield, UserCheck, Eye } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, User, Shield, UserCheck, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -36,6 +36,7 @@ export const UserManagement: React.FC = () => {
     phone_number: ''
   })
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const roles = ['Super Admin', 'Admin', 'Sales Rep', 'Security Guard', 'Order Manager', 'Finance Admin']
   const titles = ['Mr', 'Mrs', 'Ms', 'Dr']
@@ -207,6 +208,7 @@ export const UserManagement: React.FC = () => {
         employee_id: '',
         phone_number: ''
       })
+      setShowPassword(false)
     } catch (error: any) {
       console.error('Error saving user:', error)
       setError(error.message || 'Failed to save user')
@@ -262,6 +264,7 @@ export const UserManagement: React.FC = () => {
       phone_number: userToEdit.phone_number
     })
     setError('')
+    setShowPassword(false)
     setShowModal(true)
   }
 
@@ -333,6 +336,7 @@ export const UserManagement: React.FC = () => {
               phone_number: ''
             })
             setError('')
+            setShowPassword(false)
           }}
           className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
@@ -652,13 +656,26 @@ export const UserManagement: React.FC = () => {
                     </span>
                   )}
                 </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  required={!editingUser}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    required={!editingUser}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -702,6 +719,7 @@ export const UserManagement: React.FC = () => {
                       phone_number: ''
                     })
                     setError('')
+                    setShowPassword(false)
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
