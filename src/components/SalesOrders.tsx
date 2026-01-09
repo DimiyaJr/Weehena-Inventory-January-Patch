@@ -901,8 +901,6 @@ export const SalesOrders: React.FC = () => {
     setIsSubsequentPayment(isSubsequent)
     setPaymentError(null)
     
-    const paymentReceiptNo = await generatePaymentReceiptNo(orderId, orderToUpdate.order_display_id || 'SO-UNKNOWN');
-    
     try {
       const orderToUpdate = orders.find(o => o.id === orderId);
       if (!orderToUpdate || orderToUpdate.total_amount === undefined) {
