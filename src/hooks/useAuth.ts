@@ -239,7 +239,7 @@ export const useAuth = () => {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('email') // Only select email, as phone login is being removed
-        .eq('username', username)
+        .ilike('username', username)
         .maybeSingle();
 
       if (userError) throw userError;
