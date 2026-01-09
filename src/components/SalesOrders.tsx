@@ -59,12 +59,12 @@ const statusPriority: { [key: string]: number } = {
   'Security Checked': 4,
   'Security Check Bypassed Due to Off Hours': 4,
   'Departed Farm': 5,
-  'Delivered': 6,
-  'Delivered - Payment Partially Collected': 6,
   'Delivered - Payment Not Collected': 6,
-  'Completed': 7,
-  'Pending': 8,
-  'Cancelled': 9,
+  'Delivered - Payment Partially Collected': 7,
+  'Delivered': 8,
+  'Completed': 9,
+  'Pending': 10,
+  'Cancelled': 11,
 };
 
 // Price mapping based on payment category
