@@ -1175,7 +1175,7 @@ export const SalesOrders: React.FC = () => {
                 <div style="background-color: #f0f0f0; padding: 6px 0; margin: 8px 0; border: 1px solid #000; border-radius: 3px; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">SALES ORDER</div>
                 <h2 style="font-size: 16px; font-weight: bold; margin: 8px 0 5px 0;">SALES RECEIPT</h2>
                 <p style="font-size: 11px; margin: 3px 0;">Date: ${new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                <p style="font-size: 11px; margin: 3px 0;">Receipt No: <span style="font-weight: bold;">${receiptNo}</span></p>
+                <p style="font-size: 11px; margin: 3px 0;">Receipt No: <span style="font-weight: bold;">${order.receipt_no}</span></p>
               </div>
 
               <div style="margin-bottom: 15px; font-size: 11px; line-height: 1.7;">
