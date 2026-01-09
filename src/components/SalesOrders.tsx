@@ -20,10 +20,21 @@ import { isMobileOrTablet } from '../utils/deviceDetection';
 import { generateBillPDF, downloadBillForMprint, validateAndPrepareHTML, validatePDFBlob } from '../lib/mprintService';
 
 // Helper function to generate a unique receipt number for individual payments
-const generatePaymentReceiptNo = () => {
-  const timestamp = new Date().getTime();
-  const random = Math.floor(Math.random() * 10000);
-  return `PAY-${timestamp}-${random}`;
+const generatePaymentReceiptNo = async (orderId: string, orderDisplayId: string): Promise<string> => {
+  // Count existing payments for this order to determine sequence number
+  const { count, error } = await supabase
+    .from('order_payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('order_id', orderId);
+  
+  if (error) {
+    console.error('Error counting payments:', error);
+    // Fallback to timestamp if count fails
+    return `${orderDisplayId}-P${Date.now()}`;
+  }
+  
+  const nextSequence = (count || 0) + 1;
+  return `${orderDisplayId}-P${nextSequence}`;
 };
 
 interface OrderReturn {
@@ -890,7 +901,7 @@ export const SalesOrders: React.FC = () => {
     setIsSubsequentPayment(isSubsequent)
     setPaymentError(null)
     
-    const paymentReceiptNo = generatePaymentReceiptNo();
+    const paymentReceiptNo = await generatePaymentReceiptNo(orderId, orderToUpdate.order_display_id || 'SO-UNKNOWN');
     
     try {
       const orderToUpdate = orders.find(o => o.id === orderId);
