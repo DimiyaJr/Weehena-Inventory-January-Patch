@@ -54,15 +54,17 @@ const predefinedReasons = [
 const statusPriority: { [key: string]: number } = {
   'Assigned': 1,
   'Products Loaded': 2,
-  'Security Check Incomplete': 3,
-  'Security Checked': 3,
-  'Departed Farm': 4,
-  'Delivered': 5,
-  'Completed': 6,
-  'Pending': 7,
-  'Product Reloaded': 8,
+  'Product Reloaded': 3,
+  'Security Check Incomplete': 4,
+  'Security Checked': 4,
+  'Security Check Bypassed Due to Off Hours': 4,
+  'Departed Farm': 5,
+  'Delivered': 6,
+  'Delivered - Payment Partially Collected': 6,
+  'Delivered - Payment Not Collected': 6,
+  'Completed': 7,
+  'Pending': 8,
   'Cancelled': 9,
-  'Security Check Bypassed Due to Off Hours': 10,
 };
 
 // Price mapping based on payment category
