@@ -363,19 +363,20 @@ export const SalesOrders: React.FC = () => {
 
   const applyCustomSorting = (ordersData: Order[]): Order[] => {
     if (!ordersData || ordersData.length === 0) return ordersData;
-
+  
     return [...ordersData].sort((a, b) => {
-      const dateA = a.delivery_date ? new Date(a.delivery_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const dateB = b.delivery_date ? new Date(b.delivery_date).getTime() : Number.MAX_SAFE_INTEGER;
-      
-      if (dateA !== dateB) {
-        return dateA - dateB;
-      }
-      
+      // Sort only by status priority (removed delivery date sorting)
       const priorityA = statusPriority[a.status] || 999;
       const priorityB = statusPriority[b.status] || 999;
       
-      return priorityA - priorityB;
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same status priority, sort by created_at (newest first within same status)
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
     })
   }
 
