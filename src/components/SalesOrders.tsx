@@ -908,6 +908,8 @@ export const SalesOrders: React.FC = () => {
       if (!orderToUpdate || orderToUpdate.total_amount === undefined) {
         throw new Error('Order not found or total amount is missing.')
       }
+
+      const paymentReceiptNo = await generatePaymentReceiptNo(orderId, orderToUpdate.order_display_id || 'SO-UNKNOWN');
       
       // Recalculate total based on final delivery weights if provided
       let recalculatedTotal = orderToUpdate.total_amount
