@@ -19,12 +19,16 @@ import {
   Settings as SettingsIcon,
   MapPin,
   DollarSign,
-  Clock // Added Clock icon
+  Clock, // Added Clock icon
+  Key, // ADD import
+  HelpCircle // ADD import
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useCompanyData } from '../hooks/useCompanyData'
 import { supabase } from '../lib/supabase'
 import WeehenaLogo from '../assets/images/Weehena Logo(Ai) copy copy copy.png';
+import { ChangePasswordModal } from './ChangePasswordModal'; // ADD import
+import { ForgotPasswordModal } from './ForgotPasswordModal'; // ADD import
 
 export const Layout: React.FC = () => {
   const { user, logout, isOnline } = useAuth()
@@ -37,6 +41,10 @@ export const Layout: React.FC = () => {
   const [notificationOrders, setNotificationOrders] = React.useState<any[]>([])
   const [companyName, setCompanyName] = React.useState<string>('')
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false)
+  // Add state for modals
+  const [showChangePasswordModal, setShowChangePasswordModal] = React.useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = React.useState(false);
+  const [resetRequestsCount, setResetRequestsCount] = React.useState(0);
 
   // Refs for dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null)
@@ -96,6 +104,48 @@ export const Layout: React.FC = () => {
     setSidebarOpen(false)
   }, [])
 
+  // Add effect to fetch password reset requests count for Super Admins
+  React.useEffect(() => {
+    if (user && user.role === 'Super Admin') {
+      const fetchResetRequestsCount = async () => {
+        const { count, error } = await supabase
+          .from('password_reset_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        if (error) {
+          console.error('Error fetching reset requests count:', error);
+        } else {
+          setResetRequestsCount(count || 0);
+        }
+      };
+
+      fetchResetRequestsCount();
+
+      // Set up Realtime subscription
+      const subscription = supabase
+        .channel('password_reset_requests')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'password_reset_requests',
+            filter: 'status=eq.pending',
+          },
+          (payload) => {
+            console.log('Password reset request change:', payload);
+            fetchResetRequestsCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
+  }, [user]);
+
   const getNavigation = () => {
     // Define common navigation items
     const commonNav = [
@@ -118,6 +168,7 @@ export const Layout: React.FC = () => {
           { name: 'Ongoing On-Demand Orders', href: '/ongoing-on-demand-orders', icon: Clock },
           { name: 'Reports', href: '/reports', icon: BarChart3 },
           { name: 'Manage Users', href: '/user-management', icon: Shield },
+          { name: 'Password Reset Requests', href: '/password-reset-requests', icon: Key }, // NEW
           { name: 'Vehicle Management', href: '/vehicle-management', icon: Car },
           { name: 'Security Check Incomplete', href: '/security-incomplete-orders', icon: Shield },
           { name: 'System Settings', href: '/system-settings', icon: SettingsIcon },
@@ -356,17 +407,65 @@ export const Layout: React.FC = () => {
                       <div className="block px-4 py-2 text-sm text-gray-700">
                         {user?.first_name} {user?.last_name}
                       </div>
+                      <div className="border-t border-gray-100"></div>
+                      
+                      {/* Change Password */}
+                      <button
+                        onClick={() => {
+                          setShowChangePasswordModal(true);
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        <Key className="w-4 h-4 inline-block mr-2" />
+                        Change Password
+                      </button>
+
+                      {/* Forgot Password */}
+                      <button
+                        onClick={() => {
+                          setShowForgotPasswordModal(true);
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        <HelpCircle className="w-4 h-4 inline-block mr-2" />
+                        Forgot Password
+                      </button>
+
+                      <div className="border-t border-gray-100"></div>
+
                       {user?.role === 'Super Admin' && (
-                        <Link
-                          to="/system-settings"
-                          onClick={() => { setProfileDropdownOpen(false); handleCloseSidebar(); }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          role="menuitem"
-                        >
-                          <SettingsIcon className="w-4 h-4 inline-block mr-2" />
-                          System Settings
-                        </Link>
+                        <>
+                          <Link
+                            to="/password-reset-requests"
+                            onClick={() => { setProfileDropdownOpen(false); handleCloseSidebar(); }}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 relative"
+                            role="menuitem"
+                          >
+                            <Key className="w-4 h-4 inline-block mr-2" />
+                            Password Reset Requests
+                            {resetRequestsCount > 0 && (
+                              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                                {resetRequestsCount}
+                              </span>
+                            )}
+                          </Link>
+                          <Link
+                            to="/system-settings"
+                            onClick={() => { setProfileDropdownOpen(false); handleCloseSidebar(); }}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            role="menuitem"
+                          >
+                            <SettingsIcon className="w-4 h-4 inline-block mr-2" />
+                            System Settings
+                          </Link>
+                          <div className="border-t border-gray-100"></div>
+                        </>
                       )}
+
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-700"
@@ -403,6 +502,16 @@ export const Layout: React.FC = () => {
           onClick={handleCloseSidebar}
         />
       )}
+
+      {/* Add modals before the closing </div> tag */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
+      <ForgotPasswordModal
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   )
 }
