@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, User, Shield, UserCheck, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { validateTemporaryPassword, getTemporaryPasswordRequirements } from '../utils/passwordPolicy'; // Add import
 
 interface User {
   id: string
@@ -107,21 +108,15 @@ export const UserManagement: React.FC = () => {
     }
   }
 
+  // Replace validatePassword function (around line 110-124) with:
   const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long'
+    // Use simple validation for temporary passwords
+    const validation = validateTemporaryPassword(password);
+    if (!validation.isValid) {
+      return validation.errors.join('. ');
     }
-    if (!/[a-zA-Z]/.test(password)) {
-      return 'Password must contain at least one letter'
-    }
-    if (!/\d/.test(password)) {
-      return 'Password must contain at least one number'
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return 'Password must contain at least one symbol'
-    }
-    return null
-  }
+    return null;
+  };
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -647,12 +642,13 @@ export const UserManagement: React.FC = () => {
                 />
               </div>
 
+              {/* Update password field help text (around line 650-657) to show temporary password requirements: */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password {editingUser && '(leave blank to keep current)'}
+                  Temporary Password {editingUser && '(leave blank to keep current)'}
                   {!editingUser && (
                     <span className="text-xs text-gray-500 ml-1">
-                      (min 8 chars, letters, numbers, symbols)
+                      (simple password - min 6 chars, letters/numbers only)
                     </span>
                   )}
                 </label>
