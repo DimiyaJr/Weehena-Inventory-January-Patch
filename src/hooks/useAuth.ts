@@ -3,11 +3,23 @@ import { supabase, supabaseInitError } from '../lib/supabase'
 // ADD this import at top
 import { detectDeviceType, DeviceType } from '../utils/deviceDetection';
 
+// Add these new interfaces at the top with AuthUser
+export interface PasswordResetData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+  userId: string;
+  message?: string;
+}
+
 export interface AuthUser {
   id: string
   username: string
   role: string
   first_login: boolean
+  is_temporary_password?: boolean // NEW FIELD
   email?: string // ✅ Made optional
   title: 'Mr' | 'Mrs' | 'Ms' | 'Dr' // ✅ New
   first_name: string // ✅ New
@@ -44,6 +56,7 @@ export const useAuth = () => {
       username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User',
       role: normalizeRole(session.user.user_metadata?.role) || 'Sales Rep',
       first_login: session.user.user_metadata?.first_login !== undefined ? session.user.user_metadata.first_login : true,
+      is_temporary_password: session.user.user_metadata?.is_temporary_password !== undefined ? session.user.user_metadata.is_temporary_password : false, // NEW
       email: session.user.email || undefined,
       title: session.user.user_metadata?.title || 'Mr', // ✅ Default or handle as needed
       first_name: session.user.user_metadata?.first_name || 'First Name', // ✅ Default or handle as needed
@@ -103,7 +116,7 @@ export const useAuth = () => {
           try {
             const { data } = await supabase
               .from('users')
-              .select('username, role, first_login, email, title, first_name, last_name, employee_id, phone_number')
+              .select('username, role, first_login, email, title, first_name, last_name, employee_id, phone_number, is_temporary_password') // ADDED is_temporary_password
               .eq('id', session.user.id)
               .maybeSingle()
 
@@ -114,6 +127,7 @@ export const useAuth = () => {
                 username: data.username || prev.username,
                 role: normalizeRole(data.role) || prev.role,
                 first_login: data.first_login !== undefined ? data.first_login : prev.first_login,
+                is_temporary_password: data.is_temporary_password !== undefined ? data.is_temporary_password : prev.is_temporary_password, // NEW
                 email: data.email || prev.email,
                 title: data.title || prev.title,
                 first_name: data.first_name || prev.first_name,
@@ -379,6 +393,125 @@ export const useAuth = () => {
     }
   }
 
+  // ADD NEW FUNCTIONS before the return statement:
+
+  // Reset password (user changes from temporary to permanent)
+  const resetPassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      // Verify current password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('password')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+      if (!userData) throw new Error('User not found');
+
+      // Compare plain text passwords
+      if (userData.password !== currentPassword) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Update to new password and set is_temporary_password to false
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          password: newPassword,
+          is_temporary_password: false
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Also update Supabase Auth password
+      const { error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (authError) throw authError;
+
+      // Update local user state
+      setUser(prev => prev ? { ...prev, is_temporary_password: false } : null);
+
+      return true;
+    } catch (error: any) {
+      console.error('useAuth: Reset password error:', error);
+      throw error;
+    }
+  };
+
+  // Change password (user changes their own password while logged in)
+  const changePassword = async (userId: string, oldPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      // Verify old password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('password')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+      if (!userData) throw new Error('User not found');
+
+      if (userData.password !== oldPassword) {
+        throw new Error('Old password is incorrect');
+      }
+
+      // Update password (keep is_temporary_password as false since user is changing their own password)
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ password: newPassword })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Also update Supabase Auth password
+      const { error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (authError) throw authError;
+
+      return true;
+    } catch (error: any) {
+      console.error('useAuth: Change password error:', error);
+      throw error;
+    }
+  };
+
+  // Request password reset (user forgot password - notifies Super Admins)
+  const requestPasswordReset = async (userId: string, message?: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('password_reset_requests')
+        .insert({
+          user_id: userId,
+          requested_by_user_id: userId,
+          status: 'pending',
+          request_message: message || 'User forgot password and requesting reset'
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      console.error('useAuth: Request password reset error:', error);
+      throw error;
+    }
+  };
+
   // In the return statement at the end of the component, UPDATE:
-  return { user, loading, login, signup, logout, connectionError, isOnline, deviceType: detectDeviceType() }
+  return { 
+    user, 
+    loading, 
+    login, 
+    signup, 
+    logout, 
+    connectionError, 
+    isOnline, 
+    deviceType: detectDeviceType(),
+    resetPassword, // NEW
+    changePassword, // NEW
+    requestPasswordReset // NEW
+  }
 }
