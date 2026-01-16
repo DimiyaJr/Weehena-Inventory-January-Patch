@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase' // Added supabase import
 import WeehenaLogo from '../assets/images/Weehena Logo(Ai) copy copy copy.png';
+import { ForgotPasswordModal } from './ForgotPasswordModal'; // Add import
 
 export const Login: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
@@ -11,6 +13,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false); // Add state for forgot password modal
   const { login, connectionError } = useAuth()
   const navigate = useNavigate()
 
@@ -32,12 +35,25 @@ export const Login: React.FC = () => {
     try {
       const success = await login(credential.trim(), password.trim()) // ✅ Updated to pass credential
       if (success) {
-        navigate('/inventory')
+        // Check if user has temporary password - fetch from database
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_temporary_password')
+          .eq('username', credential.trim())
+          .single();
+        
+        if (userData?.is_temporary_password) {
+          // Redirect to password reset page
+          navigate('/reset-password');
+        } else {
+          // Normal login - go to inventory
+          navigate('/inventory');
+        }
       }
     } catch (err: any) {
       console.error('Login error:', err)
       if (err.message && err.message.includes('Invalid login credentials')) {
-        setError('Invalid username or password. Please check your credentials and try again, or sign up if you don\'t have an account.')
+        setError('Invalid username or password. Please check your credentials and try again.')
       } else if (err.message && err.message.includes('Email not confirmed')) {
         setError('Please verify your email before logging in. Check your inbox for a confirmation link.')
       } else if (err.message && err.message.includes('company')) {
@@ -131,6 +147,14 @@ export const Login: React.FC = () => {
               >
                 {loading ? 'Logging in...' : 'Login'}
               </button>
+              {/* Add forgot password button */}
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
+                className="w-full py-2 px-4 mt-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Forgot Password?
+              </button>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
@@ -142,6 +166,11 @@ export const Login: React.FC = () => {
           )}
         </div>
       </div>
+      {/* Add modal at the end of the return statement */}
+      <ForgotPasswordModal
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   )
 }
