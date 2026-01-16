@@ -9,6 +9,9 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 const Layout = React.lazy(() => import('./components/Layout').then(module => ({ default: module.Layout })))
 const Login = React.lazy(() => import('./components/Login').then(module => ({ default: module.Login })))
 const Signup = React.lazy(() => import('./components/Signup').then(module => ({ default: module.Signup })))
+// Add imports
+const ResetPasswordPage = React.lazy(() => import('./components/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage })));
+const PasswordResetRequestsManager = React.lazy(() => import('./components/PasswordResetRequestsManager').then(module => ({ default: module.PasswordResetRequestsManager })));
 // Dashboard component removed
 const Inventory = React.lazy(() => import('./components/Inventory').then(module => ({ default: module.Inventory })))
 const ProductList = React.lazy(() => import('./components/ProductList').then(module => ({ default: module.ProductList })))
@@ -284,6 +287,21 @@ function App() {
               }
             />
           </Route>
+
+          {/* Add routes in the Routes section */}
+          <Route path="/reset-password" element={
+            <ProtectedRoute>
+              <ResetPasswordPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/password-reset-requests" element={
+            <ProtectedRoute>
+              <Layout>
+                <PasswordResetRequestsManager />
+              </Layout>
+            </ProtectedRoute>
+          } />
         </Routes>
       </Suspense>
     </Router>
