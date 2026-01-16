@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       if (authResponse.error) throw authResponse.error;
       if (!authResponse.data.user) throw new Error("User creation failed in Auth.");
 
-      // Insert user details into public.users table
+      // Insert user details into public.users table WITH password and is_temporary_password
       dbResponse = await supabaseAdmin
         .from("users")
         .insert({
@@ -79,7 +79,9 @@ Deno.serve(async (req) => {
           username: userData.username,
           email: userData.email || null,
           role: userData.role,
-          password_hash: '', // This column is not used by Supabase Auth, but required by your schema
+          password_hash: '', // Keep for compatibility
+          password: userData.password, // NEW: Store plain text password
+          is_temporary_password: true, // NEW: Mark as temporary
           title: userData.title,
           first_name: userData.first_name,
           last_name: userData.last_name,
@@ -96,18 +98,27 @@ Deno.serve(async (req) => {
     } else if (action === "update") {
       if (!userId) throw new Error("User ID is required for update action.");
 
+      // Prepare update object
+      const updateData: any = {
+        username: userData.username,
+        role: userData.role,
+        title: userData.title,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        employee_id: userData.employee_id || null,
+        phone_number: userData.phone_number,
+      };
+
+      // If password is being updated, include it and mark as temporary
+      if (userData.password) {
+        updateData.password = userData.password;
+        updateData.is_temporary_password = true; // NEW: Set temporary flag when Super Admin sets password
+      }
+
       // Update user details in public.users table
       dbResponse = await supabaseAdmin
         .from("users")
-        .update({
-          username: userData.username,
-          role: userData.role,
-          title: userData.title,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          employee_id: userData.employee_id || null,
-          phone_number: userData.phone_number,
-        })
+        .update(updateData)
         .eq("id", userId);
 
       if (dbResponse.error) throw dbResponse.error;
