@@ -286,20 +286,21 @@ function App() {
                 </ErrorBoundary>
               }
             />
+            {/* Step 2: Add the route in the correct location */}
+            <Route
+              path="password-reset-requests"
+              element={
+                <ErrorBoundary>
+                  {user?.role === 'Super Admin' ? <PasswordResetRequestsManager /> : <Navigate to="/sales-orders" replace />}
+                </ErrorBoundary>
+              }
+            />
           </Route>
 
           {/* Add routes in the Routes section */}
           <Route path="/reset-password" element={
             <ProtectedRoute>
               <ResetPasswordPage />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/password-reset-requests" element={
-            <ProtectedRoute>
-              <Layout>
-                <PasswordResetRequestsManager />
-              </Layout>
             </ProtectedRoute>
           } />
         </Routes>
