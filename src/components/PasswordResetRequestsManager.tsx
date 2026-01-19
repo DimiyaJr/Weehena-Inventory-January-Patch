@@ -31,7 +31,7 @@ export const PasswordResetRequestsManager: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [showDiagnostic, setShowDiagnostic] = useState(false);  // ← ADD THIS LINE
+  //const [showDiagnostic, setShowDiagnostic] = useState(false);  // ← ADD THIS LINE
 
   const INTERNAL_USER_MANAGEMENT_TOKEN = import.meta.env.VITE_INTERNAL_USER_MANAGEMENT_TOKEN;
 
