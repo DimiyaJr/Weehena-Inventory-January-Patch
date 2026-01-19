@@ -31,7 +31,6 @@ export const PasswordResetRequestsManager: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
-  //const [showDiagnostic, setShowDiagnostic] = useState(false);  // ← ADD THIS LINE
 
   const INTERNAL_USER_MANAGEMENT_TOKEN = import.meta.env.VITE_INTERNAL_USER_MANAGEMENT_TOKEN;
 
@@ -74,12 +73,6 @@ export const PasswordResetRequestsManager: React.FC = () => {
     try {
       console.log('Fetching password reset requests...');
       console.log('Current user:', user);
-      
-      // First, check if we have access using diagnostic function
-      const { data: diagnostic, error: diagError } = await supabase
-        .rpc('check_super_admin_access');
-      
-      console.log('Diagnostic check:', diagnostic, diagError);
       
       // Use RPC function instead of direct table query
       const { data, error } = await supabase
@@ -228,16 +221,6 @@ export const PasswordResetRequestsManager: React.FC = () => {
     );
   }
 
-  const runDiagnostic = async () => {
-    console.log('=== RUNNING DIAGNOSTIC ===');
-    
-    const { data: diagData, error: diagError } = await supabase
-      .rpc('check_super_admin_access');
-    
-    console.log('Diagnostic result:', diagData, diagError);
-    alert(JSON.stringify({ diagData, diagError }, null, 2));
-  };
-
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const completedRequests = requests.filter(r => r.status === 'completed');
 
@@ -246,13 +229,6 @@ export const PasswordResetRequestsManager: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Password Reset Requests</h1>
         <p className="text-gray-600 mt-1">Manage user password reset requests</p>
-        {/* Change 5: Add Diagnostic Button (Temporary) */}
-        <button 
-          onClick={runDiagnostic}
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Run Diagnostic Test
-        </button>
       </div>
 
       {/* Pending Requests */}
