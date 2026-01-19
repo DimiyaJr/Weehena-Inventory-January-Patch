@@ -426,36 +426,25 @@ export const useAuth = () => {
 
       console.log('resetPassword: Current password verified, updating database...');
 
-      // Update to new password and set is_temporary_password to false
-      const { error: updateError, data: updateData } = await supabase
-        .from('users')
-        .update({ 
-          password: newPassword,
-          is_temporary_password: false
-        })
-        .eq('id', userId)
-        .select();
+      // In resetPassword function, replace the update section with:
+      const { data: resetResult, error: updateError } = await supabase
+        .rpc('reset_user_password', {
+          p_user_id: userId,
+          p_new_password: newPassword
+        });
 
-      console.log('resetPassword: Database update result:', { 
-        error: updateError, 
-        data: updateData 
+      console.log('resetPassword: Function call result:', { 
+        result: resetResult, 
+        error: updateError 
       });
 
       if (updateError) {
-        console.error('resetPassword: Database update error:', updateError);
+        console.error('resetPassword: Function call error:', updateError);
         throw updateError;
       }
 
-      console.log('resetPassword: Updating Supabase Auth password...');
-
-      // Also update Supabase Auth password
-      const { error: authError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (authError) {
-        console.error('resetPassword: Auth update error:', authError);
-        throw authError;
+      if (!resetResult) {
+        throw new Error('Password reset failed - user not found or no changes made');
       }
 
       console.log('resetPassword: Password reset successful, updating local state...');
