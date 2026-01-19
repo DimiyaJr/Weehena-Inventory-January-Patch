@@ -27,10 +27,9 @@ export const LoginForgotPasswordModal: React.FC<LoginForgotPasswordModalProps> =
 
     try {
       // Look up user by username
+      // Replace the lookup query with:
       const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, username, first_name, last_name')
-        .eq('username', username.trim())
+        .rpc('find_user_by_username', { p_username: username.trim() })
         .single();
 
       if (userError || !userData) {
