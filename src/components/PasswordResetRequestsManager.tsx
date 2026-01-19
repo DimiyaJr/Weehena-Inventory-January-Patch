@@ -40,10 +40,22 @@ export const PasswordResetRequestsManager: React.FC = () => {
     }
   }, [user]);
 
-  // 2. Fix Password Reset Requests Query
-  // 2.1 Update PasswordResetRequestsManager.tsx
+  // Debug effect to log requests state
+  useEffect(() => {
+    console.log('PasswordResetRequestsManager - Current state:', {
+      requests,
+      requestsCount: requests.length,
+      pendingCount: requests.filter(r => r.status === 'pending').length,
+      completedCount: requests.filter(r => r.status === 'completed').length,
+      user: user?.role
+    });
+  }, [requests, user]);
+
+  // 3. Fix src/components/PasswordResetRequestsManager.tsx
   const fetchRequests = async () => {
     try {
+      console.log('Fetching password reset requests...');
+      
       const { data, error } = await supabase
         .from('password_reset_requests')
         .select('*')
@@ -53,6 +65,8 @@ export const PasswordResetRequestsManager: React.FC = () => {
         console.error('Error fetching requests:', error);
         throw error;
       }
+
+      console.log('Fetched requests:', data);
 
       // Manually fetch user data for each request
       if (data && data.length > 0) {
@@ -65,8 +79,10 @@ export const PasswordResetRequestsManager: React.FC = () => {
               .single();
 
             if (userError) {
-              console.error('Error fetching user data:', userError);
+              console.error('Error fetching user data for user_id:', request.user_id, userError);
             }
+
+            console.log('User data for request:', request.id, userData);
 
             return {
               ...request,
@@ -81,8 +97,10 @@ export const PasswordResetRequestsManager: React.FC = () => {
           })
         );
 
+        console.log('Final requests with users:', requestsWithUsers);
         setRequests(requestsWithUsers);
       } else {
+        console.log('No requests found');
         setRequests([]);
       }
     } catch (err) {
