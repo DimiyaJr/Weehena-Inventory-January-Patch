@@ -40,26 +40,54 @@ export const PasswordResetRequestsManager: React.FC = () => {
     }
   }, [user]);
 
+  // 2. Fix Password Reset Requests Query
+  // 2.1 Update PasswordResetRequestsManager.tsx
   const fetchRequests = async () => {
     try {
       const { data, error } = await supabase
         .from('password_reset_requests')
-        .select(`
-          *,
-          user:users!password_reset_requests_user_id_fkey (
-            username,
-            first_name,
-            last_name,
-            employee_id,
-            title
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setRequests(data || []);
+      if (error) {
+        console.error('Error fetching requests:', error);
+        throw error;
+      }
+
+      // Manually fetch user data for each request
+      if (data && data.length > 0) {
+        const requestsWithUsers = await Promise.all(
+          data.map(async (request) => {
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('username, first_name, last_name, employee_id, title')
+              .eq('id', request.user_id)
+              .single();
+
+            if (userError) {
+              console.error('Error fetching user data:', userError);
+            }
+
+            return {
+              ...request,
+              user: userData || {
+                username: 'Unknown',
+                first_name: 'Unknown',
+                last_name: 'User',
+                employee_id: null,
+                title: 'Mr'
+              }
+            };
+          })
+        );
+
+        setRequests(requestsWithUsers);
+      } else {
+        setRequests([]);
+      }
     } catch (err) {
-      console.error('Error fetching requests:', err);
+      console.error('Error in fetchRequests:', err);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
