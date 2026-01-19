@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase'; // ADD this import
 import { validateUserPassword, getUserPasswordRequirements } from '../utils/passwordPolicy';
 import WeehenaLogo from '../assets/images/Weehena Logo(Ai) copy copy copy.png';
 
@@ -60,6 +61,21 @@ export const ResetPasswordPage: React.FC = () => {
       }
 
       await resetPassword(user.id, formData.currentPassword, formData.newPassword);
+
+      // 6. Refresh User Session After Password Reset
+      // 6.1 Update ResetPasswordPage.tsx
+      // Force refresh session to get updated user data
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Fetch fresh user data
+        const { data: freshUserData } = await supabase
+          .from('users')
+          .select('is_temporary_password')
+          .eq('id', user.id)
+          .single();
+        
+        console.log('Password reset complete. Fresh data:', freshUserData);
+      }
 
       // Success - redirect to inventory
       navigate('/inventory');
