@@ -4,7 +4,7 @@ import { Calendar, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase' // Added supabase import
 import WeehenaLogo from '../assets/images/Weehena Logo(Ai) copy copy copy.png';
-import { ForgotPasswordModal } from './ForgotPasswordModal'; // Add import
+import { LoginForgotPasswordModal } from './LoginForgotPasswordModal'; // Add import
 
 export const Login: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
@@ -167,7 +167,7 @@ export const Login: React.FC = () => {
         </div>
       </div>
       {/* Add modal at the end of the return statement */}
-      <ForgotPasswordModal
+      <LoginForgotPasswordModal
         isOpen={showForgotPasswordModal}
         onClose={() => setShowForgotPasswordModal(false)}
       />
