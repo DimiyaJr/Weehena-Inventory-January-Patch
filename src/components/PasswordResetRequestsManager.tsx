@@ -34,9 +34,26 @@ export const PasswordResetRequestsManager: React.FC = () => {
 
   const INTERNAL_USER_MANAGEMENT_TOKEN = import.meta.env.VITE_INTERNAL_USER_MANAGEMENT_TOKEN;
 
+  // Change 2: Add More Logging at Component Start
+  console.log('PasswordResetRequestsManager - Component rendered', {
+    user,
+    userRole: user?.role,
+    loading
+  });
+
+  // Change 1: Add Debug Logging to PasswordResetRequestsManager.tsx
   useEffect(() => {
+    console.log('PasswordResetRequestsManager - useEffect triggered', {
+      user,
+      userRole: user?.role,
+      isSupeAdmin: user?.role === 'Super Admin'
+    });
+    
     if (user?.role === 'Super Admin') {
+      console.log('User is Super Admin, calling fetchRequests...');
       fetchRequests();
+    } else {
+      console.log('User is NOT Super Admin or user is null');
     }
   }, [user]);
 
@@ -51,27 +68,33 @@ export const PasswordResetRequestsManager: React.FC = () => {
     });
   }, [requests, user]);
 
-  // 3. Fix src/components/PasswordResetRequestsManager.tsx
+  // Change 4: Update fetchRequests to Use RPC Function
   const fetchRequests = async () => {
     try {
       console.log('Fetching password reset requests...');
+      console.log('Current user:', user);
       
+      // First, check if we have access using diagnostic function
+      const { data: diagnostic, error: diagError } = await supabase
+        .rpc('check_super_admin_access');
+      
+      console.log('Diagnostic check:', diagnostic, diagError);
+      
+      // Use RPC function instead of direct table query
       const { data, error } = await supabase
-        .from('password_reset_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_password_reset_requests');
 
       if (error) {
         console.error('Error fetching requests:', error);
         throw error;
       }
 
-      console.log('Fetched requests:', data);
+      console.log('Fetched requests via RPC:', data);
 
       // Manually fetch user data for each request
       if (data && data.length > 0) {
         const requestsWithUsers = await Promise.all(
-          data.map(async (request) => {
+          data.map(async (request: any) => {
             const { data: userData, error: userError } = await supabase
               .from('users')
               .select('username, first_name, last_name, employee_id, title')
@@ -204,6 +227,19 @@ export const PasswordResetRequestsManager: React.FC = () => {
     );
   }
 
+  // Change 5: Add Diagnostic Button (Temporary)
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+
+  const runDiagnostic = async () => {
+    console.log('=== RUNNING DIAGNOSTIC ===');
+    
+    const { data: diagData, error: diagError } = await supabase
+      .rpc('check_super_admin_access');
+    
+    console.log('Diagnostic result:', diagData, diagError);
+    alert(JSON.stringify({ diagData, diagError }, null, 2));
+  };
+
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const completedRequests = requests.filter(r => r.status === 'completed');
 
@@ -212,6 +248,13 @@ export const PasswordResetRequestsManager: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Password Reset Requests</h1>
         <p className="text-gray-600 mt-1">Manage user password reset requests</p>
+        {/* Change 5: Add Diagnostic Button (Temporary) */}
+        <button 
+          onClick={runDiagnostic}
+          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Run Diagnostic Test
+        </button>
       </div>
 
       {/* Pending Requests */}
