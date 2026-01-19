@@ -398,42 +398,72 @@ export const useAuth = () => {
   // Reset password (user changes from temporary to permanent)
   const resetPassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
+      console.log('resetPassword: Starting password reset for user:', userId);
+      
       // Verify current password
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('password')
+        .select('password, is_temporary_password')
         .eq('id', userId)
         .single();
 
-      if (userError) throw userError;
+      console.log('resetPassword: User data fetched:', { 
+        hasPassword: !!userData?.password, 
+        isTemporary: userData?.is_temporary_password 
+      });
+
+      if (userError) {
+        console.error('resetPassword: User fetch error:', userError);
+        throw userError;
+      }
       if (!userData) throw new Error('User not found');
 
       // Compare plain text passwords
       if (userData.password !== currentPassword) {
+        console.error('resetPassword: Current password mismatch');
         throw new Error('Current password is incorrect');
       }
 
+      console.log('resetPassword: Current password verified, updating database...');
+
       // Update to new password and set is_temporary_password to false
-      const { error: updateError } = await supabase
+      const { error: updateError, data: updateData } = await supabase
         .from('users')
         .update({ 
           password: newPassword,
           is_temporary_password: false
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
-      if (updateError) throw updateError;
+      console.log('resetPassword: Database update result:', { 
+        error: updateError, 
+        data: updateData 
+      });
+
+      if (updateError) {
+        console.error('resetPassword: Database update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('resetPassword: Updating Supabase Auth password...');
 
       // Also update Supabase Auth password
       const { error: authError } = await supabase.auth.updateUser({
         password: newPassword
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('resetPassword: Auth update error:', authError);
+        throw authError;
+      }
+
+      console.log('resetPassword: Password reset successful, updating local state...');
 
       // Update local user state
       setUser(prev => prev ? { ...prev, is_temporary_password: false } : null);
 
+      console.log('resetPassword: Complete');
       return true;
     } catch (error: any) {
       console.error('useAuth: Reset password error:', error);
