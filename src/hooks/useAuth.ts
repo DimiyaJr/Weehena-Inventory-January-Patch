@@ -403,7 +403,7 @@ export const useAuth = () => {
       // Verify current password
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('password, is_temporary_password')
+        .select('password, is_temporary_password, email')
         .eq('id', userId)
         .single();
 
@@ -424,23 +424,37 @@ export const useAuth = () => {
         throw new Error('Current password is incorrect');
       }
 
-      console.log('resetPassword: Current password verified, updating database...');
+      console.log('resetPassword: Current password verified, updating passwords...');
 
-      // In resetPassword function, replace the update section with:
+      // CRITICAL FIX: Update Supabase Auth password FIRST
+      const { error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (authError) {
+        console.error('resetPassword: Auth password update failed:', authError);
+        throw new Error(`Failed to update authentication password: ${authError.message}`);
+      }
+
+      console.log('resetPassword: Auth password updated successfully');
+
+      // Then update database record
       const { data: resetResult, error: updateError } = await supabase
         .rpc('reset_user_password', {
           p_user_id: userId,
           p_new_password: newPassword
         });
 
-      console.log('resetPassword: Function call result:', { 
+      console.log('resetPassword: Database update result:', { 
         result: resetResult, 
         error: updateError 
       });
 
       if (updateError) {
-        console.error('resetPassword: Function call error:', updateError);
-        throw updateError;
+        console.error('resetPassword: Database update error:', updateError);
+        // Note: Auth password is already updated, but database failed
+        // This is logged for admin review
+        throw new Error(`Database update failed: ${updateError.message}`);
       }
 
       if (!resetResult) {
