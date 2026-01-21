@@ -37,7 +37,6 @@ export const InventoryReportsTab: React.FC = () => {
     categoryDistributionChart: null as HTMLCanvasElement | null,
     inventoryValueChart: null as HTMLCanvasElement | null,
     lowStockAlertChart: null as HTMLCanvasElement | null,
-    inventoryTrendChart: null as HTMLCanvasElement | null,
     salesByPricingTierChart: null as HTMLCanvasElement | null
   })
 
@@ -303,23 +302,6 @@ export const InventoryReportsTab: React.FC = () => {
               }}
             />
           )}
-        </ReportCard>
-
-        {/* Inventory Trend */}
-        <ReportCard
-          title="Inventory Trend"
-          icon={TrendingDown}
-          isLoading={loading}
-          error={error}
-          className="lg:col-span-2"
-        >
-          <InventoryTrendChart
-            startDate={filters.startDate}
-            endDate={filters.endDate}
-            onCanvasReady={(canvas) => {
-              canvasRefs.current.inventoryTrendChart = canvas
-            }}
-          />
         </ReportCard>
       </div>
 
