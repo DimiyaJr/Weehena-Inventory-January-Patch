@@ -195,13 +195,15 @@ export const Layout: React.FC = () => {
           { name: 'Product List', href: '/products', icon: ClipboardList },
           { name: 'Categories', href: '/categories', icon: Tag },
           { name: 'Service Customer', href: '/service', icon: ShoppingCart },
+          { name: 'Reports', href: '/reports', icon: BarChart3 },
         ]
       case 'Sales Rep':
         return [
           ...commonNav,
           { name: 'My Inventory', href: '/inventory', icon: ShoppingBag },
           { name: 'On Demand Orders', href: '/on-demand-orders', icon: Clipboard },
-          { name: 'Ongoing On-Demand Orders', href: '/ongoing-on-demand-orders', icon: Clock }, // NEW NAVIGATION ITEM
+          { name: 'Ongoing On-Demand Orders', href: '/ongoing-on-demand-orders', icon: Clock },
+          { name: 'Reports', href: '/reports', icon: BarChart3 },
         ]
       case 'Security Guard':
         return [
