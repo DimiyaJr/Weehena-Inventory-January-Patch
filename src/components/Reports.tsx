@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth' // Import useAuth to get isOnline status
 import { formatCurrency } from '../utils/formatters' // New import
 import { WEIGHT_UNIT } from '../utils/units' // New import
+import { InventoryReportsTab } from './reports/InventoryReportsTab'
 
 interface SalesData {
   date: string
@@ -26,7 +27,7 @@ interface LowStockItem {
 }
 
 export const Reports: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'sales' | 'inventory'>('sales')
+  const [activeTab, setActiveTab] = useState<'sales' | 'inventory' | 'inventory-detailed'>('sales')
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month'>('day')
   const { isOnline } = useAuth() // Get online status
   const [salesData, setSalesData] = useState<SalesData[]>([])
@@ -281,6 +282,16 @@ export const Reports: React.FC = () => {
         >
           Inventory Reports
         </button>
+        <button
+          onClick={() => setActiveTab('inventory-detailed')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeTab === 'inventory-detailed'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Inventory Analysis
+        </button>
       </div>
 
       {activeTab === 'sales' && (
@@ -439,6 +450,8 @@ export const Reports: React.FC = () => {
           </div>
         </>
       )}
+
+      {activeTab === 'inventory-detailed' && <InventoryReportsTab />}
 
       {loading && (
         <div className="flex items-center justify-center py-8">
